@@ -14,6 +14,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Cache renv/library to skip reinstalling already restored packages
+      - name: Cache renv library
+        uses: actions/cache@v4
+        with:
+          path: renv/library
+          key: renv-${{ runner.os }}-${{ hashFiles('renv.lock') }}
+          restore-keys: |
+            renv-${{ runner.os }}-
+
+      # Cache renv cache directory (downloaded tarballs from CRAN/Bioconductor)
+      - name: Cache renv package tarballs
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/renv
+          key: renv-tarballs-${{ runner.os }}
+
       - name: Install system dependencies
         run: |
           apt-get update 
@@ -21,8 +37,7 @@ jobs:
             libharfbuzz-dev libfribidi-dev zlib1g-dev libfftw3-dev libxml2-dev \
             libxt-dev curl libglpk-dev libcairo2-dev libmagick++-dev \
             libcurl4-gnutls-dev libudunits2-dev libgdal-dev libproj-dev \
-            pandoc libnode-dev tk libv8-dev git \
-            cmake libabsl-dev
+            pandoc libnode-dev tk libv8-dev git cmake libabsl-dev
           apt-get clean
           rm -rf /var/lib/apt/lists/*
 
