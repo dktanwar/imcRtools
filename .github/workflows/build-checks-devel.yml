@@ -4,8 +4,7 @@ on:
   push:
     branches: [ devel ]
   pull_request:
-    branches: 
-        - devel
+    branches: [ devel ]
 
 jobs:
   R-CMD-check:
@@ -15,35 +14,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Query dependencies
-        run: |
-          install.packages('remotes')
-          saveRDS(remotes::dev_package_deps(dependencies = TRUE), ".github/depends.Rds", version = 2)
-        shell: Rscript {0}        
-      
-      - name: Install system requirements
+      - name: Install system dependencies
         run: |
           apt-get update 
-          apt-get install -y --no-install-recommends apt-utils 
-          apt-get install -y --no-install-recommends libharfbuzz-dev libfribidi-dev zlib1g-dev libfftw3-dev libxml2-dev libxt-dev curl libglpk-dev libcairo2-dev libmagick++-dev libcurl4-gnutls-dev libudunits2-dev libgdal-dev libproj-dev pandoc libnode-dev tk libv8-dev
+          apt-get install -y --no-install-recommends \
+            libharfbuzz-dev libfribidi-dev zlib1g-dev libfftw3-dev libxml2-dev \
+            libxt-dev curl libglpk-dev libcairo2-dev libmagick++-dev \
+            libcurl4-gnutls-dev libudunits2-dev libgdal-dev libproj-dev \
+            pandoc libnode-dev tk libv8-dev git
           apt-get clean
-          rm -rf /var/lib/apt/ilists/*
+          rm -rf /var/lib/apt/lists/*
 
-      - name: Install dependencies
+      - name: Set Bioconductor and CRAN repos
         run: |
-         install.packages("BiocManager")
-         install.packages("svglite")
-         BiocManager::install(version = "devel", update = TRUE, ask = FALSE, force = TRUE) 
-         remotes::install_deps(dependencies = TRUE, repos = BiocManager::repositories(), Ncpu = 2L)
+          options(repos = BiocManager::repositories())
+          install.packages("BiocManager")
         shell: Rscript {0}
-        
-      - name: Check
+
+      - name: Install renv and restore packages
         run: |
-          install.packages("rcmdcheck")          
+          install.packages("renv")
+          renv::restore()
+        shell: Rscript {0}
+
+      - name: Run R CMD check
+        run: |
+          install.packages("rcmdcheck")
           rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")
         shell: Rscript {0}
-        
-      - name: BiocCheck
+
+      - name: Run BiocCheck
         run: |
           BiocManager::install("BiocCheck")
           BiocCheck::BiocCheck(".")
@@ -51,7 +51,7 @@ jobs:
 
       - name: Session info
         run: |
+          install.packages("sessioninfo")
           options(width = 100)
-          pkgs <- installed.packages()[, "Package"]
-          sessioninfo::session_info(pkgs, include_base = TRUE)
+          sessioninfo::session_info()
         shell: Rscript {0}
