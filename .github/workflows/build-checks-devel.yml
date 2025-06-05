@@ -61,13 +61,11 @@ jobs:
 
       - name: Run BiocCheck
         run: |
-          BiocManager::install("BiocCheck")
           BiocCheck::BiocCheck(".")
         shell: Rscript {0}
 
       - name: Session info
         run: |
-          install.packages("sessioninfo")
           options(width = 100)
           sessioninfo::session_info()
         shell: Rscript {0}
